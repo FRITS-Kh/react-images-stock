@@ -14,8 +14,12 @@ function Card({ path, title, createdAt, user, id, isSingle = false }) {
   }, [createdAt]);
 
   return (
-    <div className="col">
-      <div className="card h-100">
+    <div className="col text-center">
+      <div
+        className={`card h-100 ${isSingle ? 'd-inline-flex' : ''}`}
+        style={isSingle ? { minWidth: '300px' } : {}}
+      >
+        {/* <div className="card h-100"> */}
         <img
           src={path}
           className="card-img-top object-fit-cover"
