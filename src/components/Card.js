@@ -33,11 +33,7 @@ function Card({ path, title, createdAt, user, id, isSingle = false }) {
             <i>{`@${user}`}</i>
           </div>
           {!isSingle && (
-            <Link
-              className="stretched-link"
-              to={`/images/${id}`}
-              state={{ id }}
-            />
+            <Link className="stretched-link" to={`/images/${id}`} />
           )}
         </div>
       </div>

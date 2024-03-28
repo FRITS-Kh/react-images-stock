@@ -1,11 +1,11 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { useFirestoreContext } from '../context/FirestoreContext';
 import { useAuthContext } from '../context/AuthContext';
 import Firestore from '../handlers/firestore';
 import Storage from '../handlers/storage';
 import Card from './Card';
-import { useMemo } from 'react';
 import Modal from './Modal';
 
 const { removeDoc } = Firestore;
@@ -15,9 +15,9 @@ function ImageDetails() {
   const navigate = useNavigate();
   const { currentUser } = useAuthContext();
   const { state, read } = useFirestoreContext();
-  const { state: routerState } = useLocation();
+  const params = useParams();
   const modalId = 'removeImage';
-  const item = state.items.find((item) => item.id === routerState.id);
+  const item = state.items.find((item) => item.id === params.id);
   const isAuthor = useMemo(
     () => currentUser && currentUser?.uid === item?.uid,
     [currentUser, item]
