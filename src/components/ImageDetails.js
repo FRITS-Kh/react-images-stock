@@ -17,7 +17,10 @@ function ImageDetails() {
   const { state, read } = useFirestoreContext();
   const params = useParams();
   const modalId = 'removeImage';
-  const item = state.items.find((item) => item.id === params.id);
+  const item = useMemo(
+    () => state.items.find((item) => item.id === params.id),
+    [params.id, state.items]
+  );
   const isAuthor = useMemo(
     () => currentUser && currentUser?.uid === item?.uid,
     [currentUser, item]
@@ -58,7 +61,11 @@ function ImageDetails() {
       </div>
 
       <div className="row row-cols-1 justify-content-center">
-        <Card {...item} isSingle={true} />
+        {item ? (
+          <Card {...item} isSingle={true} />
+        ) : (
+          <h2 className="text-center mt-5">The image does not exist!</h2>
+        )}
       </div>
 
       {isAuthor && (
