@@ -1,4 +1,9 @@
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import {
+  getDownloadURL,
+  ref,
+  uploadBytes,
+  deleteObject,
+} from 'firebase/storage';
 
 import { storage } from '../lib/firebase.config';
 
@@ -28,7 +33,21 @@ const Storage = {
         const mediaRef = ref(storage, media.path);
         const fileUrl = await getDownloadURL(mediaRef);
 
-        resolve(fileUrl);
+        resolve({ url: fileUrl, filePath: media.path });
+      } catch (e) {
+        console.log(e);
+        reject(e);
+      }
+    });
+  },
+  deleteFile: (url) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const mediaRef = ref(storage, url);
+
+        deleteObject(mediaRef).then(() =>
+          resolve(`the ${url} successfully removed`)
+        );
       } catch (e) {
         console.log(e);
         reject(e);

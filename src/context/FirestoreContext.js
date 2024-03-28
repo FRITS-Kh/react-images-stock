@@ -1,4 +1,4 @@
-import { createContext, useReducer, useCallback } from 'react';
+import { createContext, useReducer, useCallback, useContext } from 'react';
 
 import Firestore from '../handlers/firestore';
 
@@ -10,29 +10,22 @@ const initialInputs = {
   title: null,
   file: null,
   path: null,
-  // createdAt: null,
-  // user: null,
 };
 const initialState = {
   items: photos,
+  placeholders: photos,
   count: photos.length,
   inputs: initialInputs,
   isCollapsed: false,
+  search: '',
 };
 
 const onChange = (state, e) => {
   if (e.target.name === 'file') {
-    // const currentDate = new Date();
-    // const timestamp = {
-    //   seconds: Math.floor(currentDate.getTime() / 1000),
-    //   nanoseconds: currentDate.getMilliseconds() * 1000000,
-    // };
-
     return {
       ...state.inputs,
       file: e.target.files[0],
       path: URL.createObjectURL(e.target.files[0]),
-      // createdAt: timestamp,
     };
   } else {
     return { ...state.inputs, title: e.target.value };
@@ -41,22 +34,27 @@ const onChange = (state, e) => {
 
 function reducer(state, action) {
   switch (action.type) {
-    case 'setItem':
+    case 'filterItems':
       return {
         ...state,
-        items: [state.inputs, ...state.items],
-        count: state.items.length + 1,
-        inputs: { ...initialInputs },
+        items: action.payload.results,
+        search: action.payload.search,
       };
     case 'setItems':
       return {
         ...state,
         items: action.payload.items,
+        placeholders: action.payload.items,
       };
     case 'setInputs':
       return {
         ...state,
         inputs: onChange(state, action.payload.value),
+      };
+    case 'resetInputs':
+      return {
+        ...state,
+        inputs: { ...initialInputs },
       };
     case 'setCollapse':
       return {
@@ -76,11 +74,33 @@ function Provider({ children }) {
     dispatch({ type: 'setItems', payload: { items } });
   }, [dispatch]);
 
+  const filterItems = useCallback(
+    (input) => {
+      if (!input) {
+        dispatch({
+          type: 'setItems',
+          payload: { items: state.placeholders, search: '' },
+        });
+      }
+
+      const results = state.placeholders.filter((item) => {
+        const itemTitle = item.title.toLowerCase();
+        const searchInput = input.toLowerCase();
+
+        return itemTitle.includes(searchInput);
+      });
+
+      dispatch({ type: 'filterItems', payload: { results, search: input } });
+    },
+    [state, dispatch]
+  );
+
   return (
-    <Context.Provider value={{ state, dispatch, read }}>
+    <Context.Provider value={{ state, dispatch, read, filterItems }}>
       {children}
     </Context.Provider>
   );
 }
 
+export const useFirestoreContext = () => useContext(Context);
 export default Provider;

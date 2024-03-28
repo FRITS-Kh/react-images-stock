@@ -1,38 +1,21 @@
-import { useMemo, useContext, useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { Context } from '../context/FirestoreContext';
-import Firestore from '../handlers/firestore';
-import Storage from '../handlers/storage';
-import { useAuthContext } from '../context/AuthContext';
+import { useAuthContext } from '../../context/AuthContext';
+import { useFirestoreContext } from '../../context/FirestoreContext';
+import Firestore from '../../handlers/firestore';
+import Storage from '../../handlers/storage';
+import Preview from './Preview';
 
 const { writeDoc } = Firestore;
 const { uploadFile, downloadFile } = Storage;
 
-function Preview() {
-  const { state } = useContext(Context);
-  const path = state.inputs.path;
-
-  return (
-    path && (
-      <div
-        className="rounded p-1 m-5"
-        style={{
-          width: '30%',
-          height: '300px',
-          backgroundImage: `url(${path}`,
-          backgroundSize: 'cover',
-        }}
-      ></div>
-    )
-  );
-}
-
 function UploadForm() {
   const [uploadError, setUploadError] = useState('');
-  const { dispatch, state, read } = useContext(Context);
+  const { dispatch, state, read } = useFirestoreContext();
   const { isCollapsed: isVisible, inputs } = state;
   const { currentUser } = useAuthContext();
   const username = currentUser?.displayName.toLowerCase();
+
   const isDisabled = useMemo(
     () => Object.values(inputs).some((input) => !input),
     [inputs]
@@ -40,21 +23,33 @@ function UploadForm() {
 
   const onChange = (e) =>
     dispatch({ type: 'setInputs', payload: { value: e } });
+
   const onSubmit = (e) => {
     e.preventDefault();
     setUploadError('');
     uploadFile(inputs)
       .then(downloadFile)
-      .then((url) => {
-        writeDoc({ ...inputs, path: url, user: username }, 'stocks').then(
-          () => {
-            read();
-            dispatch({
-              type: 'setCollapse',
-              payload: { isCollapsed: false },
-            });
-          }
-        );
+      .then(({ url, filePath }) => {
+        writeDoc(
+          {
+            ...inputs,
+            path: url,
+            filePath,
+            user: username,
+            uid: currentUser.uid,
+          },
+          'stocks'
+        ).then((result) => {
+          console.log(result);
+          dispatch({
+            type: 'resetInputs',
+          });
+          read();
+          dispatch({
+            type: 'setCollapse',
+            payload: { isCollapsed: false },
+          });
+        });
       })
       .catch((e) => setUploadError(e.code ?? 'Unauthorized'));
   };
@@ -62,11 +57,11 @@ function UploadForm() {
   return (
     isVisible && (
       <>
-        <p className="display-6 text-center mb-3">Upload Stock Image</p>
-        <div className="mb-5 d-flex align-items-center justify-content-center">
+        <h3 className="text-center mb-3">Upload Stock Image</h3>
+        <div className="mb-5 d-lg-flex align-items-center justify-content-center">
           <Preview />
 
-          <form className="mb-2" onSubmit={onSubmit}>
+          <form className="mb-2 mb-lg-0" onSubmit={onSubmit}>
             {uploadError && (
               <div className="mb-3 text-danger">{uploadError}</div>
             )}
@@ -88,13 +83,15 @@ function UploadForm() {
                 onChange={onChange}
               />
             </div>
-            <button
-              type="submit"
-              className="btn btn-success float-end"
-              disabled={isDisabled}
-            >
-              Save and upload
-            </button>
+            <div className="d-grid float-lg-end">
+              <button
+                type="submit"
+                className="btn btn-success"
+                disabled={isDisabled}
+              >
+                Save and upload
+              </button>
+            </div>
           </form>
         </div>
       </>
